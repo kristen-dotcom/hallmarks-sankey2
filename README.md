@@ -1,2 +1,326 @@
 # hallmarks-sankey2
 hallmarks of aging snaky
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hallmarks to Ingredients Sankey</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+  <style>
+    body { margin: 0; background: #000; }
+    #sankey-wrap {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #000;
+      border-radius: 12px;
+      height: 740px;
+    }
+    #sankey {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font: 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      opacity: 0;
+      transform: translate(-50%, -120%);
+      white-space: nowrap;
+      z-index: 9999;
+    }
+    #sankey-wrap .label {
+      fill: #fff;
+      font: 14px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    #sankey-wrap .node rect {
+      rx: 6px;
+      ry: 6px;
+      stroke: rgba(255, 255, 255, 0.15);
+      stroke-width: 1;
+    }
+    #sankey-wrap .link {
+      fill: none;
+      stroke-linecap: round;
+      mix-blend-mode: screen;
+    }
+    #sankey-wrap .axis-title {
+      fill: #fff;
+      font-weight: 600;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+    @media (max-width: 768px) {
+      #sankey-wrap .label { font-size: 12px; }
+      #sankey-wrap .axis-title { font-size: 14px; }
+      #sankey-wrap { height: 600px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="sankey-wrap">
+    <svg id="sankey" role="img" aria-label="Hallmarks to Ingredients Sankey"></svg>
+    <div id="tooltip"></div>
+  </div>
+
+  <script>
+    (function initializeSankey() {
+      console.log("Sankey script initializing...");
+
+      if (!window.d3 || !window.d3.sankey) {
+        console.error("D3 or d3-sankey not loaded.");
+        return;
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM loaded, setting up Sankey diagram...");
+        const svg = d3.select("#sankey");
+        if (!svg.node()) {
+          console.error("SVG element with id 'sankey' not found.");
+          return;
+        }
+
+        try {
+          const HALLMARKS = [
+            "Genomic Instability",
+            "Telomere Attrition",
+            "Epigenetic Alterations",
+            "Loss of Proteostasis",
+            "Disabled Macroautophagy",
+            "Deregulated Nutrient-Sensing",
+            "Mitochondrial Dysfunction",
+            "Cellular Senescence",
+            "Stem Cell Exhaustion",
+            "Altered Intercellular Communication",
+            "Chronic Inflammation",
+            "Dysbiosis"
+          ];
+
+          const pairs = [
+            {hallmark:'Genomic Instability', ingredient:'Apigenin'},
+            {hallmark:'Genomic Instability', ingredient:'Ca-α-ketoglutarate'},
+            {hallmark:'Genomic Instability', ingredient:'Curcumin'},
+            {hallmark:'Genomic Instability', ingredient:'Pterostilbene'},
+            {hallmark:'Genomic Instability', ingredient:'Sulforaphane'},
+            {hallmark:'Genomic Instability', ingredient:'Trigonelline'},
+            {hallmark:'Genomic Instability', ingredient:'Vitamin B12'},
+            {hallmark:'Genomic Instability', ingredient:'Vitamin B9 (Folate)'},
+            {hallmark:'Genomic Instability', ingredient:'Vitamin K2'},
+            {hallmark:'Telomere Attrition', ingredient:'Cycloastragenol'},
+            {hallmark:'Telomere Attrition', ingredient:'EGCG'},
+            {hallmark:'Telomere Attrition', ingredient:'Lithium'},
+            {hallmark:'Telomere Attrition', ingredient:'Vitamin B12'},
+            {hallmark:'Telomere Attrition', ingredient:'Vitamin B9 (Folate)'},
+            {hallmark:'Telomere Attrition', ingredient:'Vitamin D3'},
+            {hallmark:'Telomere Attrition', ingredient:'Vitamin K2'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Apigenin'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Ca-α-ketoglutarate'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Curcumin'},
+            {hallmark:'Epigenetic Alterations', ingredient:'EGCG'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Fisetin'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Pterostilbene'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Quercetin'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Spermidine'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Sulforaphane'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Trigonelline'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Vitamin B12'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Vitamin B9 (Folate)'},
+            {hallmark:'Epigenetic Alterations', ingredient:'Vitamin K2'},
+            {hallmark:'Loss of Proteostasis', ingredient:'Apigenin'},
+            {hallmark:'Loss of Proteostasis', ingredient:'Berberine'},
+            {hallmark:'Loss of Proteostasis', ingredient:'Ca-α-ketoglutarate'},
+            {hallmark:'Loss of Proteostasis', ingredient:'Curcumin'},
+            {hallmark:'Loss of Proteostasis', ingredient:'EGCG'},
+            {hallmark:'Loss of Proteostasis', ingredient:'Fisetin'},
+            {hallmark:'Loss of Proteostasis', ingredient:'Pterostilbene'},
+            {hallmark:'Loss of Proteostasis', ingredient:'Quercetin'},
+            {hallmark:'Loss of Proteostasis', ingredient:'Spermidine'},
+            {hallmark:'Loss of Proteostasis', ingredient:'Sulforaphane'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Apigenin'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Berberine'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Ca-α-ketoglutarate'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Curcumin'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'EGCG'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Fisetin'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Lithium'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Pterostilbene'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Quercetin'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Spermidine'},
+            {hallmark:'Disabled Macroautophagy', ingredient:'Urolithin A'},
+            {hallmark:'Deregulated Nutrient-Sensing', ingredient:'Apigenin'},
+            {hallmark:'Deregulated Nutrient-Sensing', ingredient:'Berberine'},
+            {hallmark:'Deregulated Nutrient-Sensing', ingredient:'Bromelain'},
+            {hallmark:'Deregulated Nutrient-Sensing', ingredient:'Ca-α-ketoglutarate'},
+            {hallmark:'Deregulated Nutrient-Sensing', ingredient:'Pterostilbene'},
+            {hallmark:'Deregulated Nutrient-Sensing', ingredient:'Spermidine'},
+            {hallmark:'Deregulated Nutrient-Sensing', ingredient:'Trigonelline'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Apigenin'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Berberine'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Ca-α-ketoglutarate'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Curcumin'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Cycloastragenol'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'EGCG'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Pterostilbene'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Quercetin'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Spermidine'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Trigonelline'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Urolithin A'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Vitamin D3'},
+            {hallmark:'Mitochondrial Dysfunction', ingredient:'Vitamin K2'},
+            {hallmark:'Cellular Senescence', ingredient:'Apigenin'},
+            {hallmark:'Cellular Senescence', ingredient:'Bromelain'},
+            {hallmark:'Cellular Senescence', ingredient:'Fisetin'},
+            {hallmark:'Cellular Senescence', ingredient:'Lithium'},
+            {hallmark:'Cellular Senescence', ingredient:'Pterostilbene'},
+            {hallmark:'Cellular Senescence', ingredient:'Quercetin'},
+            {hallmark:'Cellular Senescence', ingredient:'Urolithin A'},
+            {hallmark:'Cellular Senescence', ingredient:'Vitamin D3'},
+            {hallmark:'Cellular Senescence', ingredient:'Vitamin K2'},
+            {hallmark:'Stem Cell Exhaustion', ingredient:'Ca-α-ketoglutarate'},
+            {hallmark:'Stem Cell Exhaustion', ingredient:'Cycloastragenol'},
+            {hallmark:'Stem Cell Exhaustion', ingredient:'Lithium'},
+            {hallmark:'Stem Cell Exhaustion', ingredient:'Spermidine'},
+            {hallmark:'Stem Cell Exhaustion', ingredient:'Trigonelline'},
+            {hallmark:'Altered Intercellular Communication', ingredient:'Lithium'},
+            {hallmark:'Altered Intercellular Communication', ingredient:'Pterostilbene'},
+            {hallmark:'Altered Intercellular Communication', ingredient:'Rhodiola rosea'},
+            {hallmark:'Altered Intercellular Communication', ingredient:'Spermidine'},
+            {hallmark:'Chronic Inflammation', ingredient:'Apigenin'},
+            {hallmark:'Chronic Inflammation', ingredient:'Berberine'},
+            {hallmark:'Chronic Inflammation', ingredient:'Bromelain'},
+            {hallmark:'Chronic Inflammation', ingredient:'Ca-α-ketoglutarate'},
+            {hallmark:'Chronic Inflammation', ingredient:'Curcumin'},
+            {hallmark:'Chronic Inflammation', ingredient:'Cycloastragenol'},
+            {hallmark:'Chronic Inflammation', ingredient:'EGCG'},
+            {hallmark:'Chronic Inflammation', ingredient:'Fisetin'},
+            {hallmark:'Chronic Inflammation', ingredient:'Pterostilbene'},
+            {hallmark:'Chronic Inflammation', ingredient:'Quercetin'},
+            {hallmark:'Chronic Inflammation', ingredient:'Rhodiola rosea'},
+            {hallmark:'Chronic Inflammation', ingredient:'Spermidine'},
+            {hallmark:'Chronic Inflammation', ingredient:'Sulforaphane'},
+            {hallmark:'Chronic Inflammation', ingredient:'Urolithin A'},
+            {hallmark:'Chronic Inflammation', ingredient:'Vitamin D3'},
+            {hallmark:'Chronic Inflammation', ingredient:'Vitamin K2'},
+            {hallmark:'Dysbiosis', ingredient:'Berberine'},
+            {hallmark:'Dysbiosis', ingredient:'Curcumin'},
+            {hallmark:'Dysbiosis', ingredient:'Rhodiola rosea'},
+            {hallmark:'Dysbiosis', ingredient:'Sulforaphane'},
+            {hallmark:'Dysbiosis', ingredient:'Vitamin D3'}
+          ];
+
+          const ingredientNames = Array.from(new Set(pairs.map(d => d.ingredient)))
+            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+          const nodes = HALLMARKS.map(n => ({ name: n, side: "left" }))
+            .concat(ingredientNames.map(n => ({ name: n, side: "right" })));
+
+          const idx = Object.fromEntries(nodes.map((d, i) => [d.name, i]));
+
+          const linkMap = new Map();
+          pairs.forEach(d => {
+            const key = d.hallmark + "→" + d.ingredient;
+            linkMap.set(key, (linkMap.get(key) || 0) + 1);
+          });
+          const links = Array.from(linkMap, ([key, v]) => {
+            const [h, i] = key.split("→");
+            return { source: idx[h], target: idx[i], value: v };
+          });
+
+          function draw() {
+            console.log("Drawing Sankey diagram...");
+            const { width, height } = svg.node().getBoundingClientRect();
+            if (width === 0 || height === 0) {
+              console.warn("SVG has zero width or height.");
+              return;
+            }
+
+            svg.selectAll("*").remove();
+
+            const sankey = d3.sankey()
+              .nodeId(d => d.name)
+              .nodeWidth(14)
+              .nodePadding(16)
+              .nodeAlign(d3.sankeyJustify)
+              .nodeSort(null)
+              .extent([[16, 28], [width - 16, height - 28]]);
+
+            const graph = sankey({
+              nodes: nodes.map(d => Object.assign({}, d)),
+              links: links.map(d => Object.assign({}, d))
+            });
+
+            const teals = ["#043f44", "#08585d", "#0a7277", "#0e8e93", "#12aab0", "#43c1c5", "#74d7d9", "#a5e7ea", "#cff4f5"];
+            const linkColor = d3.interpolateRgbBasis(teals)(0.70);
+            const nodeColorLeft = d3.interpolateRgbBasis(teals)(0.25);
+            const nodeColorRight = d3.interpolateRgbBasis(teals)(0.78);
+
+            const tip = d3.select("#tooltip");
+            const showTip = (html, evt) => {
+              tip.html(html).style("opacity", 1)
+                .style("left", (evt.clientX) + "px")
+                .style("top", (evt.clientY - 14) + "px");
+            };
+            const hideTip = () => tip.style("opacity", 0);
+
+            svg.append("g").selectAll("path")
+              .data(graph.links)
+              .join("path")
+              .attr("class", "link")
+              .attr("d", d3.sankeyLinkHorizontal())
+              .attr("stroke", linkColor)
+              .attr("stroke-opacity", 0.6)
+              .attr("stroke-width", d => Math.max(1.25, d.width))
+              .on("mousemove", (evt, d) => showTip(`${d.source.name} → ${d.target.name}<br><b>${d.value}</b> link(s)`, evt))
+              .on("mouseleave", hideTip)
+              .on("mouseenter", function () { d3.select(this).attr("stroke-opacity", 0.95); })
+              .on("mouseout", function () { d3.select(this).attr("stroke-opacity", 0.6); });
+
+            const gNode = svg.append("g").attr("class", "nodes").selectAll("g")
+              .data(graph.nodes)
+              .join("g");
+
+            gNode.append("rect")
+              .attr("x", d => d.x0)
+              .attr("y", d => d.y0)
+              .attr("height", d => Math.max(6, d.y1 - d.y0))
+              .attr("width", d => Math.max(8, d.x1 - d.x0))
+              .attr("fill", d => d.side === "left" ? nodeColorLeft : nodeColorRight)
+              .on("mousemove", (evt, d) => {
+                const inL = d.targetLinks?.map(l => l.source.name) || [];
+                const outL = d.sourceLinks?.map(l => l.target.name) || [];
+                const list = d.side === "left" ? outL : inL;
+                const lines = list.slice(0, 8).map(n => `• ${n}`).join("<br>");
+                const more = list.length > 8 ? `<br>… +${list.length - 8} more` : "";
+                showTip(`<b>${d.name}</b><br>${lines}${more}`, evt);
+              })
+              .on("mouseleave", hideTip);
+
+            gNode.append("text")
+              .attr("class", "label")
+              .attr("x", d => d.side === "left" ? d.x0 - 10 : d.x1 + 10)
+              .attr("y", d => (d.y0 + d.y1) / 2)
+              .attr("dy", "0.35em")
+              .attr("text-anchor", d => d.side === "left" ? "end" : "start")
+              .text(d => d.name);
+
+            svg.append("text").attr("class", "axis-title").attr("x", 22).attr("y", 18).attr("text-anchor", "start").text("Aging Hallmark");
+            svg.append("text").attr("class", "axis-title").attr("x", width - 22).attr("y", 18).attr("text-anchor", "end").text("Ingredient");
+          }
+
+          draw();
+          window.addEventListener("resize", draw);
+        } catch (error) {
+          console.error("Error in Sankey diagram setup:", error);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
