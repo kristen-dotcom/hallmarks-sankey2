@@ -1,2 +1,2 @@
-# hallmarks-sankey2
-hallmarks of aging snaky
+# Hallmarks to Ingredients Sankey Diagram
+This repository hosts a Sankey diagram mapping aging hallmarks to ingredients.
